@@ -244,7 +244,7 @@ filter_forms(Msgs, Enums, [{function,L,option,2,[_Clause]}|Tail], Basename, Acc)
                              end, [], Msgs),
     Function = {function, L, option, 2, NewClauses ++ [AnyClause]},
     filter_forms(Msgs, Enums, Tail, Basename, [Function | Acc]);
-filter_forms(Msgs, Enums, [{function,L,option,1,[_Clause]} = F1|Tail], Basename, Acc) ->
+filter_forms(Msgs, Enums, [{function,L,option,1,[_Clause]}|Tail], Basename, Acc) ->
     AnyClause = {clause, L, [{var, L, '_'}], [], [{nil, L}]},
     NewClauses = lists:foldl(fun({Name, _Fields, _Extended, Options}, OptAcc) ->
                                 Ret = lists:foldl(fun({option, OpName, Val}, A) ->
@@ -254,7 +254,12 @@ filter_forms(Msgs, Enums, [{function,L,option,1,[_Clause]} = F1|Tail], Basename,
                                 [C | OptAcc]
                              end, [AnyClause], Msgs),
     Function = {function, L, option, 1, NewClauses},
-    % io:format("***********************~n~p~n", [Function]),
+    filter_forms(Msgs, Enums, Tail, Basename, [Function | Acc]);
+filter_forms(Msgs, Enums, [{function,L,messages,0,[_Clause]}|Tail], Basename, Acc) ->
+    Messages = lists:foldl( fun({Name, _Fields, _Extended, _Options}, A) ->
+                                {cons, L, {atom, L, list_to_atom(Name)}, A}
+                            end, {nil, L}, Msgs),
+    Function = {function, L, messages, 0, [{clause, L, [], [], [Messages]}]},
     filter_forms(Msgs, Enums, Tail, Basename, [Function | Acc]);
 % garfield end
 
