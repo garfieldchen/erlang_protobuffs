@@ -28,7 +28,17 @@
          set_extension/3]).
 -export([decode_extensions/1]).
 -export([encode/1, decode/2]).
+
+-export([option/1, option/2]).
+
 -record(pikachu, {abc, def, '$extensions' = dict:new()}).
+
+% message options
+option(_MsgName) ->
+    [].
+
+option(_Msg, _Option) ->
+    undefined.
 
 %% ENCODE
 encode(Record) ->
