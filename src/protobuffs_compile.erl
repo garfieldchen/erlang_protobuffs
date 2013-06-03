@@ -370,7 +370,7 @@ filter_set_extension([],_,Acc) ->
     Acc;
 filter_set_extension([{_,_,disallowed, _}|Tail],Clause,Acc) ->
     filter_set_extension(Tail,Clause,Acc);
-filter_set_extension([{MsgName,_,Extends}|Tail],Clause,Acc) ->
+filter_set_extension([{MsgName,_,Extends, _}|Tail],Clause,Acc) ->
     {clause,L,[OldRecArg,_OldAtomArg,ValueArg],Gs,[OldSet,OldReturn]} = Clause,
     {match,L,{record,L,_,RecArgFields},RecVar} = OldRecArg,
     {match,L2,NewReturn,OldDictStore} = OldSet,
@@ -393,7 +393,7 @@ filter_get_extension_atom([],_AtomClause,Acc) ->
     Acc;
 filter_get_extension_atom([{_,_,disallowed, _}|Tail],Clause,Acc) ->
     filter_get_extension_atom(Tail,Clause,Acc);
-filter_get_extension_atom([{Msg,_,Extends}|Tail],Clause,Acc) ->
+filter_get_extension_atom([{Msg,_,Extends, _}|Tail],Clause,Acc) ->
     {clause,L,[RecArg,_OldAtom],[RecG],[OldSubcall]} = Clause,
     [{call,L,Guard,[Garg1,_RecName]}] = RecG,
     {call,L1,Subname,[RecVar,_OldInt]} = OldSubcall,
@@ -411,7 +411,7 @@ filter_get_extension_integer([],_,Acc) ->
     Acc;
 filter_get_extension_integer([{_,_,disallowed, _}|Tail],IntClause,Acc) ->
     filter_get_extension_integer(Tail,IntClause,Acc);
-filter_get_extension_integer([{Msg,_,_Extends}|Tail],IntClause,Acc) ->
+filter_get_extension_integer([{Msg,_,_Extends, _}|Tail],IntClause,Acc) ->
     {clause,L,[{record,L,Pikachu,Fields},IntArg],Gs,Body} = IntClause,
     NewRecName = replace_atom(Pikachu, pikachu, atomize(Msg)),
     NewRecArg = {record,L,NewRecName,Fields},
@@ -425,7 +425,7 @@ filter_has_extension([], _, Acc) ->
     Acc;
 filter_has_extension([{_Msg,_,disallowed, _}|Tail], Clause, Acc) ->
     filter_has_extension(Tail, Clause, Acc);
-filter_has_extension([{MsgName,_,Extends}|Tail], Clause, Acc) ->
+filter_has_extension([{MsgName,_,Extends, _}|Tail], Clause, Acc) ->
     {clause,L,[OldRecArg,_],G,[Body]} = Clause,
 		{call, L1, {remote,L1,Dict,IsKey},[_Key,DictArg]} = Body,
     RecArg = replace_atom(OldRecArg,pikachu,atomize(MsgName)),
@@ -448,7 +448,7 @@ filter_extension_size([], _RecClause, Acc) ->
     Acc;
 filter_extension_size([{_MsgName,_,disallowed, _}|Tail],Clause,Acc) ->
     filter_extension_size(Tail,Clause,Acc);
-filter_extension_size([{MsgName,_,_}|Tail],Clause,Acc) ->
+filter_extension_size([{MsgName,_,_, _}|Tail],Clause,Acc) ->
     {clause,L,[OldArg],G,Body} = Clause,
     NewClause = {clause,L,[replace_atom(OldArg,pikachu,atomize(MsgName))],G,Body},
     NewAcc = [NewClause | Acc],
