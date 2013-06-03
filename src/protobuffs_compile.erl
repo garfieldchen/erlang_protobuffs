@@ -586,7 +586,7 @@ expand_enum_to_int_function(Enums, Line, Clause) ->
     {function,Line,enum_to_int,2,[filter_enum_to_int_clause(Enum, Clause) || Enum <- Enums]}.
 
 %% @hidden
-filter_enum_to_int_clause({enum,EnumTypeName,IntValue,EnumValue}, {clause,L,_Args,Guards,_}) ->
+filter_enum_to_int_clause({enum,EnumTypeName,IntValue,EnumValue, _}, {clause,L,_Args,Guards,_}) ->
     {clause,L,[{atom,L,atomize(EnumTypeName)},{atom,L,EnumValue}],Guards,[{integer,L,IntValue}]}.
 
 %% @hidden
@@ -596,7 +596,7 @@ expand_int_to_enum_function(Enums, Line, Clause) ->
     {function,Line,int_to_enum,2, [filter_int_to_enum_clause(Enum, Clause) || Enum <- Enums] ++ [Clause]}.
 
 %% @hidden
-filter_int_to_enum_clause({enum,EnumTypeName,IntValue,EnumValue}, {clause,L,_Args,Guards,_}) ->
+filter_int_to_enum_clause({enum,EnumTypeName,IntValue,EnumValue, _}, {clause,L,_Args,Guards,_}) ->
     {clause,L,[{atom,L,atomize(EnumTypeName)},{integer,L,IntValue}],Guards,[{atom,L,EnumValue}]}.
 
 %% @hidden
@@ -659,7 +659,7 @@ collect_full_messages([{enum, Name, Fields} | Tail], Collected) ->
 			      {EnumAtom, IntValue} -> [{enum,
 							[type_path_to_type(LN) || LN <-ListName],
 							IntValue,
-							EnumAtom} | TmpAcc];
+							EnumAtom, []} | TmpAcc];
 			      _ -> TmpAcc
 			  end
 		  end, [], Fields),
@@ -673,15 +673,22 @@ collect_full_messages([{option,_,_} | Tail], Collected) ->
 collect_full_messages([{import, _Filename} | Tail], Collected) ->
     collect_full_messages(Tail, Collected);
 collect_full_messages([{extend, Name, ExtendedFields} | Tail], Collected) ->
-    SeekName0 = string:tokens(Name, "."),
-    SeekName1 = [list_to_tuple(lists:reverse(SeekName0))],
+    SeekName0 = case lists:reverse(string:tokens(Name, ".")) of
+                    [_] = R ->
+                       R;
+                    [_, _] = R ->
+                        R;
+                    [A | T] ->
+                        [A, string:join(lists:reverse(T), ".")]
+                end,
+    SeekName1 = [list_to_tuple(SeekName0)],
     SeekNames0 = resolve_list_name(SeekName1, Collected#collected.package),
     SeekNames = [list_to_tuple(SN) || SN <- SeekNames0],
 
     #collected{msg = CollectedMsg} = Collected,
     BestMatch = element(1, find_message_by_path(SeekNames, CollectedMsg)),
 
-    {ListName,FieldsOut,ExtendFields} = lists:keyfind(BestMatch,1,CollectedMsg),
+    {ListName,FieldsOut,ExtendFields, _} = lists:keyfind(BestMatch,1,CollectedMsg),
     {ListName,Extensions} = lists:keyfind(BestMatch,1,Collected#collected.extensions),
 
     FunNotInReservedRange = fun(Id) -> not(19000 =< Id andalso Id =< 19999) end,
@@ -714,7 +721,7 @@ collect_full_messages([{extend, Name, ExtendedFields} | Tail], Collected) ->
         disallowed -> disallowed;
         _ -> ExtendFields ++ ExtendedFieldsOut
     end,
-    NewCollected = Collected#collected{msg=lists:keyreplace(ListName,1,CollectedMsg,{ListName,FieldsOut,NewExtends})},
+    NewCollected = Collected#collected{msg=lists:keyreplace(ListName,1,CollectedMsg,{ListName,FieldsOut,NewExtends, []})},
     collect_full_messages(Tail, NewCollected);
 collect_full_messages([file_boundary | Tail], Collected) ->
     collect_full_messages(Tail, Collected#collected{package = undefined});
